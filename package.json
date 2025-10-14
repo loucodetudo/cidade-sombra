@@ -1,0 +1,26 @@
+{
+  "name": "cidade-sombra-mvp-v6",
+  "version": "0.6.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "prisma:migrate": "prisma migrate dev --name v6_hud_rainy_theme_exposure_hooks",
+    "prisma:seed": "ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "5.18.0",
+    "bcryptjs": "2.4.3",
+    "iron-session": "8.0.1",
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "swr": "2.2.5"
+  },
+  "devDependencies": {
+    "prisma": "5.18.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.4.5"
+  }
+}
