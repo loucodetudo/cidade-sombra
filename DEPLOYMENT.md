@@ -4,7 +4,9 @@ This project is configured as a Next.js app and can be deployed either to **Verc
 
 ## 0) Pre-deploy checks
 
-1. This repository now includes a minimal game shell in `app/` (App Router).
+1. Ensure your game source exists in one of these folders at repo root:
+   - `app/` (App Router), or
+   - `pages/` (Pages Router)
 2. Ensure required environment variables are configured in your platform:
    - `SESSION_SECRET` (from `.env.example`)
 3. Validate production build locally:
