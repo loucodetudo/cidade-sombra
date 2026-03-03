@@ -24,6 +24,8 @@ See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for Vercel and Docker deployment instruct
 ## Conteúdo desta versão
 
 - 100+ missões procedurais em `/api/missions/generate`.
+
+- A tela inicial usa apenas missões geradas (sem botões de Trabalho Rápido/Missão HOT) e possui acesso direto para `/missions`.
 - Sistema de investimentos em `/api/investments/*` e página `/investments`.
 - Loja e itens em `/api/items/*` e página `/shop`.
 - Inventário e equipar itens em `/api/inventory` e página `/inventory`.
