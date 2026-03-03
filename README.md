@@ -15,3 +15,7 @@ npm run prisma:seed
 npm run dev
 # http://localhost:3000
 ```
+
+## Deploy
+
+See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for Vercel and Docker deployment instructions.
