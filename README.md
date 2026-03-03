@@ -15,3 +15,16 @@ npm run prisma:seed
 npm run dev
 # http://localhost:3000
 ```
+
+## Deploy
+
+See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for Vercel and Docker deployment instructions.
+
+
+## Conteúdo desta versão
+
+- 100+ missões procedurais em `/api/missions/generate`.
+- Sistema de investimentos em `/api/investments/*` e página `/investments`.
+- Loja e itens em `/api/items/*` e página `/shop`.
+- Inventário e equipar itens em `/api/inventory` e página `/inventory`.
+- Models Prisma adicionados em `prisma/schema.prisma`: `Investment`, `UserInvestment`, `Item`, `UserItem`, `ShopItem`, `Category` (além de `Mission` expandida).
