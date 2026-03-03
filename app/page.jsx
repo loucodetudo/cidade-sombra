@@ -74,6 +74,14 @@ export default function Page() {
         <h1 style={{ marginTop: 0 }}>Cidade Sombra</h1>
         <p style={{ opacity: 0.85 }}>Build mínimo para deploy contínuo no Vercel. Use como base para conectar suas APIs e persistência.</p>
 
+        <nav style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+          <a href="/investments" style={{ color: '#9fc1ff' }}>Investments</a>
+          <a href="/shop" style={{ color: '#9fc1ff' }}>Shop</a>
+          <a href="/inventory" style={{ color: '#9fc1ff' }}>Inventory</a>
+        </nav>
+        <p style={{ fontSize: 13, opacity: 0.75 }}>Avatar: Sombra-01 • Outfit: Urbano Noturno • Equipados: jaqueta tática</p>
+
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12, marginTop: 20 }}>
           <Card label="Turno" value={String(game.turn)} />
           <Card label="Cash" value={`R$ ${game.cash}`} />

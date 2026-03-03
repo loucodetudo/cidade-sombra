@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int              @id @default(autoincrement())
+  email         String           @unique
+  name          String?
+  cash          Int              @default(1000)
+  energia       Int              @default(100)
+  exp           Int              @default(0)
+  exposicao     Int              @default(0)
+  avatar        String?
+  outfit        String?
+  equippedItems String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  userItems     UserItem[]
+  investments   UserInvestment[]
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  missions  Mission[]
+  items     Item[]
+  shopItems ShopItem[]
+}
+
+model Mission {
+  id             Int      @id @default(autoincrement())
+  title          String
+  description    String
+  tier           Int
+  risk           String
+  categoryId     Int
+  category       Category @relation(fields: [categoryId], references: [id])
+  successChance  Float
+  failurePenalty Int
+  energyCost     Int
+  cooldownMin    Int
+  rewardCash     Int
+  rareItemChance Float
+  createdAt      DateTime @default(now())
+}
+
+model Investment {
+  id           Int              @id @default(autoincrement())
+  name         String
+  type         String
+  cost         Int
+  yieldPerHour Float
+  riskFactor   String
+  users        UserInvestment[]
+}
+
+model UserInvestment {
+  id            Int        @id @default(autoincrement())
+  userId        Int
+  investmentId  Int
+  quantity      Int        @default(1)
+  purchasedAt   DateTime   @default(now())
+  lastCollected DateTime   @default(now())
+  user          User       @relation(fields: [userId], references: [id])
+  investment    Investment @relation(fields: [investmentId], references: [id])
+
+  @@unique([userId, investmentId])
+}
+
+model Item {
+  id         Int        @id @default(autoincrement())
+  name       String
+  categoryId Int
+  category   Category   @relation(fields: [categoryId], references: [id])
+  bonus      String
+  userItems  UserItem[]
+  shopItems  ShopItem[]
+}
+
+model UserItem {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  itemId     Int
+  equipped   Boolean  @default(false)
+  acquiredAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  item       Item     @relation(fields: [itemId], references: [id])
+
+  @@index([userId, equipped])
+}
+
+model ShopItem {
+  id         Int      @id @default(autoincrement())
+  itemId     Int
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+  item       Item     @relation(fields: [itemId], references: [id])
+  price      Int
+  stock      Int
+  createdAt  DateTime @default(now())
+}
