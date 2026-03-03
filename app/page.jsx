@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const INITIAL = {
   cash: 100,
@@ -16,8 +16,6 @@ function clamp(value, min, max) {
 
 export default function Page() {
   const [game, setGame] = useState(INITIAL);
-  const [missions, setMissions] = useState([]);
-  const [status, setStatus] = useState('');
 
   const risco = useMemo(() => {
     if (game.exposicao < 30) return 'Baixo';
@@ -25,46 +23,47 @@ export default function Page() {
     return 'Alto';
   }, [game.exposicao]);
 
-  useEffect(() => {
-    async function loadMissions() {
-      const res = await fetch('/api/missions/generate');
-      const json = await res.json();
-      setMissions((json.missions ?? []).slice(0, 8));
-    }
-    loadMissions();
-  }, []);
-
-  const runMission = (mission) => {
+  const runAction = (kind) => {
     setGame((prev) => {
-      if (prev.energia < mission.energyCost) {
-        setStatus('Energia insuficiente para essa missão.');
-        return prev;
+      if (kind === 'trabalho') {
+        return {
+          ...prev,
+          turn: prev.turn + 1,
+          energia: clamp(prev.energia - 10, 0, 100),
+          cash: prev.cash + 30,
+          exp: prev.exp + 5,
+          exposicao: clamp(prev.exposicao + 4, 0, 100),
+        };
       }
 
-      const success = Math.random() <= mission.successChance;
-      const next = {
+      if (kind === 'missao') {
+        const success = Math.random() > prev.exposicao / 140;
+        return {
+          ...prev,
+          turn: prev.turn + 1,
+          energia: clamp(prev.energia - 20, 0, 100),
+          cash: prev.cash + (success ? 80 : 10),
+          exp: prev.exp + (success ? 15 : 4),
+          exposicao: clamp(prev.exposicao + (success ? 12 : 20), 0, 100),
+        };
+      }
+
+      return {
         ...prev,
         turn: prev.turn + 1,
-        energia: clamp(prev.energia - mission.energyCost, 0, 100),
-        cash: prev.cash + (success ? mission.rewardCash : -mission.failurePenalty),
-        exp: prev.exp + (success ? mission.tier * 8 : mission.tier * 2),
-        exposicao: clamp(prev.exposicao + (success ? mission.tier * 4 : mission.tier * 8), 0, 100),
+        energia: clamp(prev.energia + 25, 0, 100),
+        exposicao: clamp(prev.exposicao - 10, 0, 100),
       };
-
-      setStatus(
-        success
-          ? `✅ Missão concluída: +R$ ${mission.rewardCash}`
-          : `❌ Missão falhou: -R$ ${mission.failurePenalty}`,
-      );
-      return next;
     });
   };
+
+  const reset = () => setGame(INITIAL);
 
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
       <section
         style={{
-          width: 'min(980px, 100%)',
+          width: 'min(860px, 100%)',
           background: 'linear-gradient(180deg, #12192a, #0b1020)',
           border: '1px solid #29354f',
           borderRadius: 16,
@@ -73,14 +72,15 @@ export default function Page() {
         }}
       >
         <h1 style={{ marginTop: 0 }}>Cidade Sombra</h1>
-        <p style={{ opacity: 0.85 }}>Missões disponíveis na tela inicial (sem Trabalho Rápido / Missão HOT).</p>
+        <p style={{ opacity: 0.85 }}>Build mínimo para deploy contínuo no Vercel. Use como base para conectar suas APIs e persistência.</p>
 
         <nav style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-          <a href="/missions" style={{ color: '#9fc1ff' }}>Missões</a>
           <a href="/investments" style={{ color: '#9fc1ff' }}>Investments</a>
           <a href="/shop" style={{ color: '#9fc1ff' }}>Shop</a>
           <a href="/inventory" style={{ color: '#9fc1ff' }}>Inventory</a>
         </nav>
+        <p style={{ fontSize: 13, opacity: 0.75 }}>Avatar: Sombra-01 • Outfit: Urbano Noturno • Equipados: jaqueta tática</p>
+
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12, marginTop: 20 }}>
           <Card label="Turno" value={String(game.turn)} />
@@ -91,34 +91,11 @@ export default function Page() {
           <Card label="Risco" value={risco} />
         </div>
 
-        {status && <p style={{ marginTop: 16 }}>{status}</p>}
-
-        <h2 style={{ marginTop: 18, marginBottom: 10 }}>Missões criadas</h2>
-        <div style={{ display: 'grid', gap: 10 }}>
-          {missions.map((mission) => (
-            <div key={mission.id} style={{ border: '1px solid #2c3b5e', borderRadius: 10, padding: 12, background: '#121c33' }}>
-              <div style={{ fontWeight: 700 }}>{mission.title}</div>
-              <div style={{ opacity: 0.85, fontSize: 13 }}>{mission.category} • Tier {mission.tier} • Risco {mission.risk}</div>
-              <div style={{ opacity: 0.85, fontSize: 13 }}>
-                Energia {mission.energyCost} • Cooldown {mission.cooldownMin} min • Recompensa R$ {mission.rewardCash}
-              </div>
-              <button
-                type="button"
-                onClick={() => runMission(mission)}
-                style={{
-                  marginTop: 8,
-                  border: '1px solid #4a5f92',
-                  background: '#223358',
-                  color: '#f5f7ff',
-                  borderRadius: 10,
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                }}
-              >
-                Executar missão
-              </button>
-            </div>
-          ))}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 20 }}>
+          <ActionButton onClick={() => runAction('trabalho')}>Trabalho Rápido</ActionButton>
+          <ActionButton onClick={() => runAction('missao')}>Missão HOT</ActionButton>
+          <ActionButton onClick={() => runAction('descanso')}>Descansar</ActionButton>
+          <ActionButton onClick={reset}>Novo Jogo</ActionButton>
         </div>
       </section>
     </main>
@@ -131,5 +108,24 @@ function Card({ label, value }) {
       <div style={{ fontSize: 12, opacity: 0.7 }}>{label}</div>
       <strong style={{ fontSize: 24 }}>{value}</strong>
     </div>
+  );
+}
+
+function ActionButton({ children, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: '1px solid #4a5f92',
+        background: '#223358',
+        color: '#f5f7ff',
+        borderRadius: 10,
+        padding: '10px 14px',
+        cursor: 'pointer',
+      }}
+    >
+      {children}
+    </button>
   );
 }
