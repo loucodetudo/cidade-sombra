@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { getEquippedBonuses } from '../src/lib/clientInventory';
 
 const INITIAL = {
   cash: 100,
@@ -18,6 +19,7 @@ export default function Page() {
   const [game, setGame] = useState(INITIAL);
   const [missions, setMissions] = useState([]);
   const [status, setStatus] = useState('');
+  const [equipped, setEquipped] = useState({ label: 'nenhum', forca: 0, defesa: 0, sorte: 0, reputacao: 0, charme: 0, energia: 0 });
 
   const risco = useMemo(() => {
     if (game.exposicao < 30) return 'Baixo';
@@ -32,31 +34,56 @@ export default function Page() {
       setMissions((json.missions ?? []).slice(0, 8));
     }
     loadMissions();
+    setEquipped(getEquippedBonuses());
   }, []);
 
   const runMission = (mission) => {
     setGame((prev) => {
-      if (prev.energia < mission.energyCost) {
-        setStatus('Energia insuficiente para essa missão.');
+      const energiaCost = Math.max(1, mission.energyCost - Math.floor(equipped.energia / 4));
+      if (prev.energia < energiaCost) {
+        setStatus('Energia insuficiente para essa missão. Vá para Casa e descanse.');
         return prev;
       }
 
-      const success = Math.random() <= mission.successChance;
+      const chanceBonus = equipped.sorte / 100;
+      const successChance = clamp(mission.successChance + chanceBonus, 0.05, 0.98);
+      const success = Math.random() <= successChance;
+
+      const rewardBoost = 1 + equipped.forca / 100;
+      const adjustedReward = Math.floor(mission.rewardCash * rewardBoost);
+      const penaltyReduction = clamp(equipped.defesa / 100, 0, 0.6);
+      const adjustedPenalty = Math.floor(mission.failurePenalty * (1 - penaltyReduction));
+      const exposureReduction = Math.floor(equipped.reputacao / 4);
+      const extraExp = Math.floor(equipped.charme / 2);
+
       const next = {
         ...prev,
         turn: prev.turn + 1,
-        energia: clamp(prev.energia - mission.energyCost, 0, 100),
-        cash: prev.cash + (success ? mission.rewardCash : -mission.failurePenalty),
-        exp: prev.exp + (success ? mission.tier * 8 : mission.tier * 2),
-        exposicao: clamp(prev.exposicao + (success ? mission.tier * 4 : mission.tier * 8), 0, 100),
+        energia: clamp(prev.energia - energiaCost, 0, 100),
+        cash: prev.cash + (success ? adjustedReward : -adjustedPenalty),
+        exp: prev.exp + (success ? mission.tier * 8 + extraExp : mission.tier * 2),
+        exposicao: clamp(prev.exposicao + (success ? mission.tier * 4 : mission.tier * 8) - exposureReduction, 0, 100),
       };
 
       setStatus(
         success
-          ? `✅ Missão concluída: +R$ ${mission.rewardCash}`
-          : `❌ Missão falhou: -R$ ${mission.failurePenalty}`,
+          ? `✅ Missão concluída: +R$ ${adjustedReward} (item: ${equipped.label})`
+          : `❌ Missão falhou: -R$ ${adjustedPenalty} (item: ${equipped.label})`,
       );
       return next;
+    });
+  };
+
+  const goHomeAndRest = () => {
+    setGame((prev) => {
+      const recovered = 30 + equipped.energia;
+      const nextEnergy = clamp(prev.energia + recovered, 0, 100);
+      setStatus(`🏠 Casa: descanso concluído. Energia +${nextEnergy - prev.energia}.`);
+      return {
+        ...prev,
+        turn: prev.turn + 1,
+        energia: nextEnergy,
+      };
     });
   };
 
@@ -73,7 +100,7 @@ export default function Page() {
         }}
       >
         <h1 style={{ marginTop: 0 }}>Cidade Sombra</h1>
-        <p style={{ opacity: 0.85 }}>Missões disponíveis na tela inicial (sem Trabalho Rápido / Missão HOT).</p>
+        <p style={{ opacity: 0.85 }}>Missões disponíveis na tela inicial e botão Casa para descansar.</p>
 
         <nav style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
           <a href="/missions" style={{ color: '#9fc1ff' }}>Missões</a>
@@ -82,6 +109,11 @@ export default function Page() {
           <a href="/inventory" style={{ color: '#9fc1ff' }}>Inventory</a>
         </nav>
 
+        <p style={{ opacity: 0.75, marginBottom: 4 }}>Item equipado: <strong>{equipped.label}</strong></p>
+        <p style={{ opacity: 0.65, fontSize: 13, marginTop: 0 }}>
+          Bônus aplicados: força +{equipped.forca}, defesa +{equipped.defesa}, sorte +{equipped.sorte}, reputação +{equipped.reputacao}, charme +{equipped.charme}, energia +{equipped.energia}
+        </p>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12, marginTop: 20 }}>
           <Card label="Turno" value={String(game.turn)} />
           <Card label="Cash" value={`R$ ${game.cash}`} />
@@ -89,6 +121,23 @@ export default function Page() {
           <Card label="EXP" value={String(game.exp)} />
           <Card label="Exposição" value={`${game.exposicao}%`} />
           <Card label="Risco" value={risco} />
+        </div>
+
+        <div style={{ marginTop: 14 }}>
+          <button
+            type="button"
+            onClick={goHomeAndRest}
+            style={{
+              border: '1px solid #4a5f92',
+              background: '#223358',
+              color: '#f5f7ff',
+              borderRadius: 10,
+              padding: '8px 12px',
+              cursor: 'pointer',
+            }}
+          >
+            Casa (descansar)
+          </button>
         </div>
 
         {status && <p style={{ marginTop: 16 }}>{status}</p>}
